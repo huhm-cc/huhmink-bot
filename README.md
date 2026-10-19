@@ -1,2 +1,2 @@
-# huhmink-bot
+# HuhmINK
 HuhmINK 官方 LINE BOT機器人開源
