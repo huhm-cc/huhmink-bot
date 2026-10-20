@@ -1,40 +1,46 @@
 /**
  * api/webhook.mjs — Vercel Serverless 模式
  *
- * 部署到 Vercel 後，把 LINE Webhook URL 設為：
- *   https://你的網域/api/webhook
+ * Vercel 的零設定 Node 函式介面是 (req, res[, context])：
+ *   - req：Node IncomingMessage（用串流收原始 body 驗簽）
+ *   - res：Node ServerResponse
+ *   - context：Fluid Compute 提供 waitUntil（有才用於 60 秒逾時推播）
  *
- * 60 秒逾時透過 context.waitUntil 背景等待，不會佔用回應時間；
- * Vercel 函式常駐時段內 pending Map 有效（Fluid Compute）。
+ * 部署後把 LINE Webhook URL 設為：
+ *   https://你的網域/api/webhook
  */
 
 import bot from '../bot.js';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function cancelTimeout() {
-  // serverless 模式下計時器由 waitUntil 管理，無需取消
-}
-
 function registerTimeout(context, userId) {
-  const waitUntil = context && typeof context.waitUntil === 'function' ? context.waitUntil.bind(context) : null;
-  if (!waitUntil) return;
+  const waitUntil =
+    context && typeof context.waitUntil === 'function' ? context.waitUntil.bind(context) : null;
+  if (!waitUntil) return; // 沒有 waitUntil 時，逾時改為「下一則訊息時被動處理」
   waitUntil(sleep(bot.TIMEOUT_MS).then(() => bot.onTimeout(userId)).catch(() => undefined));
 }
 
-export default async function handler(request, context) {
-  if (request.method !== 'POST') {
-    return new Response('Not Found', { status: 404 });
-  }
+async function readRawBody(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  return Buffer.concat(chunks).toString('utf8');
+}
 
-  const raw = await request.text();
+export default async function handler(req, res, context) {
+  if (req.method !== 'POST') {
+    res.statusCode = 404;
+    res.end('Not Found');
+    return;
+  }
 
   let ok = false;
   try {
-    if (bot.verifySignature(raw, request.headers.get('x-line-signature'))) {
+    const raw = await readRawBody(req);
+    if (bot.verifySignature(raw, req.headers['x-line-signature'])) {
       await bot.handleEvents(raw, {
         registerTimeout: (userId) => registerTimeout(context, userId),
-        cancelTimeout,
+        cancelTimeout: () => {},
       });
       ok = true;
     }
@@ -43,12 +49,9 @@ export default async function handler(request, context) {
   }
 
   // LINE 要求一律回 200
-  return new Response('{}', {
-    status: ok ? 200 : 401,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  res.statusCode = ok ? 200 : 401;
+  res.setHeader('Content-Type', 'application/json');
+  res.end('{}');
 }
 
-// waitUntil 需要函式活著等 60 秒逾時推播
 export const maxDuration = 120;
-export const dynamic = 'force-dynamic';
