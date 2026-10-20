@@ -1,5 +1,5 @@
 /**
- * api/webhook.js — Vercel Serverless 模式
+ * api/webhook.mjs — Vercel Serverless 模式
  *
  * 部署到 Vercel 後，把 LINE Webhook URL 設為：
  *   https://你的網域/api/webhook
@@ -8,7 +8,7 @@
  * Vercel 函式常駐時段內 pending Map 有效（Fluid Compute）。
  */
 
-const bot = require('../bot');
+import bot from '../bot.js';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -19,9 +19,7 @@ function cancelTimeout() {
 function registerTimeout(context, userId) {
   const waitUntil = context && typeof context.waitUntil === 'function' ? context.waitUntil.bind(context) : null;
   if (!waitUntil) return;
-  waitUntil(
-    sleep(bot.TIMEOUT_MS).then(() => bot.onTimeout(userId)).catch(() => undefined)
-  );
+  waitUntil(sleep(bot.TIMEOUT_MS).then(() => bot.onTimeout(userId)).catch(() => undefined));
 }
 
 export default async function handler(request, context) {

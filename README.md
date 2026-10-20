@@ -159,7 +159,7 @@ vercel deploy --prod
 https://你的網域/api/webhook
 ```
 
-`api/webhook.js` 使用 `context.waitUntil` 在背景等 60 秒逾時，不會影響回應速度。
+`api/webhook.mjs` 使用 `context.waitUntil` 在背景等 60 秒逾時，不會影響回應速度。
 `vercel.json` 已將函式上限設 120 秒，足夠逾時推播使用。
 
 ### 方式 B：任何長駐主機（VPS / Railway / Render / Fly.io / 樹莓派 / NAS）
@@ -199,14 +199,14 @@ node server.js        # 監聽 PORT（預設 3000），Webhook 路徑 /webhook
 huhmink-bot/
 ├── bot.js            # 核心：狀態機、指令與模糊辨識、服務單、LINE API、HuhmINK API（零相依）
 ├── server.js         # 長駐模式：HTTP server + setTimeout 計時器
-├── api/webhook.js    # Vercel Serverless 模式：waitUntil 計時器
+├── api/webhook.mjs    # Vercel Serverless 模式：waitUntil 計時器
 ├── test.js           # 本地測試：node test.js（模糊辨識 + 服務單 26 項測試）
 ├── vercel.json       # Vercel 函式 maxDuration 設定
 ├── package.json
 └── .env.example      # 環境變數範本
 ```
 
-`bot.js` 是純邏輯核心，平台相關的程式（HTTP server、計時器）拆在 `server.js` 與 `api/webhook.js`，兩種部署共用同一套對話流程。
+`bot.js` 是純邏輯核心，平台相關的程式（HTTP server、計時器）拆在 `server.js` 與 `api/webhook.mjs`，兩種部署共用同一套對話流程。
 
 ### 狀態機
 
