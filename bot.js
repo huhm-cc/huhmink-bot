@@ -101,10 +101,10 @@ async function pushMessage(userId, text) {
   if (!res.ok) throw new Error(`LINE push 失敗 (${res.status})`);
 }
 
-/** 推播給管理員（未設定 ADMIN_LINE_USER_ID 時靜靜略過） */
-async function notifyAdmin(text) {
+/** 推播給管理員（未設定 ADMIN_LINE_USER_ID 時靜靜略過；發送者本人就是管理員時也略過，避免重複訊息） */
+async function notifyAdmin(text, senderUserId) {
   const { adminUserId } = config();
-  if (!adminUserId) return;
+  if (!adminUserId || adminUserId === senderUserId) return;
   try {
     await pushMessage(adminUserId, text);
   } catch (error) {
@@ -209,7 +209,8 @@ async function cmdSos(userId, description) {
 🎫 序號：${ticket}
 👤 用戶：${userId}
 📝 內容：${description || '（未填寫）'}
-⏰ 時間：${new Date().toISOString()}`
+⏰ 時間：${new Date().toISOString()}`,
+    userId
   );
 
   return `📝服務單已開啟📝
@@ -229,7 +230,8 @@ async function cmdClose(userId) {
   await notifyAdmin(
     `✅ 服務單已由用戶關閉
 🎫 序號：${active.ticket}
-👤 用戶：${userId}`
+👤 用戶：${userId}`,
+    userId
   );
   return `📝服務單已關閉📝
 🎫服務序號：${active.ticket}`;
