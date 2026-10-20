@@ -1,12 +1,13 @@
 {
   "name": "huhmink-bot",
-  "version": "1.0.0",
-  "description": "HuhmINK 官方 LINE Bot — 把網址縮成 huhm.cc 短連結，支援密碼保護與 18+ 標記",
+  "version": "1.1.0",
+  "description": "HuhmINK 官方 LINE Bot — 把網址縮成 huhm.cc 短連結，支援密碼保護、18+ 標記與客服服務單",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test": "node test.js"
   },
   "engines": {
     "node": ">=18"
